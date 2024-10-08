@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.menu {
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  border: 2px solid black;
+}
+
+.page {
+  height: calc(100vh - 50px);
+}
+
+.virtual-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  border: 1px solid black;
+}
+
+.viewport-item {
+  height: 100%;
+}
