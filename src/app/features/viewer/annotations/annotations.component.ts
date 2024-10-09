@@ -5,11 +5,14 @@ import {
   ElementRef,
   HostListener,
   inject,
+  Input,
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
 import { AnnotationComponent } from './annotation/annotation.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AnnotationsService } from './api/annotations.service';
+import { AnnotationClass } from './api/annotation.class';
 
 @Component({
   selector: 'app-annotations',
@@ -17,6 +20,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrl: './annotations.component.scss',
 })
 export class AnnotationsComponent {
+  @Input() public documentId!: string;
+  @Input() public pageNumber!: number;
   @ViewChild('annotationsContainer')
   public annotationsContainer!: ElementRef<HTMLDivElement>;
   private isDrawing = false;
@@ -25,7 +30,7 @@ export class AnnotationsComponent {
   private startY!: number;
 
   private annotationRef: ComponentRef<AnnotationComponent> | null = null;
-  private annotationRefs: Map<number, ComponentRef<AnnotationComponent>> =
+  private annotationRefs: Map<string, ComponentRef<AnnotationComponent>> =
     new Map();
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
@@ -39,12 +44,17 @@ export class AnnotationsComponent {
         this.viewContainerRef.createComponent(AnnotationComponent);
 
       this.annotationRef.instance.setPosition(this.startX, this.startY);
-      const id = Date.now();
+      const id = String(Date.now());
       this.annotationRef.instance.id = id;
       this.annotationRef.instance.remove
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(id => {
-          this.removeAnnotation(id);
+          this.onRemoveAnnotation(id);
+        });
+      this.annotationRef.instance.changed
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(id => {
+          this.onChangedAnnotation(id);
         });
 
       this.annotationRefs.set(id, this.annotationRef);
@@ -71,18 +81,39 @@ export class AnnotationsComponent {
     const currentX = event.offsetX - this.startX;
     const currentY = event.offsetY - this.startY;
     this.annotationRef.instance.setSize(currentX, currentY);
+    void this.annotationsService.saveTempAnnotation(
+      this.documentId,
+      this.pageNumber,
+      new AnnotationClass(this.annotationRef.instance)
+    );
     this.isDrawing = false;
     this.annotationRef = null;
   };
 
-  public constructor(private readonly viewContainerRef: ViewContainerRef) {}
+  public constructor(
+    private readonly viewContainerRef: ViewContainerRef,
+    private readonly annotationsService: AnnotationsService
+  ) {}
 
-  private removeAnnotation(id: number): void {
+  private onRemoveAnnotation(id: string): void {
     const annotationRef = this.annotationRefs.get(id);
     if (!annotationRef) {
       return;
     }
     this.annotationRefs.delete(id);
+    void this.annotationsService.deleteTempAnnotation(id);
     annotationRef.destroy();
+  }
+
+  private onChangedAnnotation(id: string): void {
+    const annotationRef = this.annotationRefs.get(id);
+    if (!annotationRef) {
+      return;
+    }
+    void this.annotationsService.updateTempAnnotation(
+      this.documentId,
+      this.pageNumber,
+      new AnnotationClass(annotationRef.instance)
+    );
   }
 }
