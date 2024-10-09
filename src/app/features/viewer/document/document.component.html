@@ -1,0 +1,19 @@
+<div *ngIf="isLoading; else viewer">Is loading</div>
+
+<ng-template #viewer>
+  <div class="menu">
+    <h2>{{pageTitle}}</h2>
+    <div>
+      <button (click)="zoomInHandler()" [disabled]="pageSizeInPx >= maxHeight">+</button>
+      <button (click)="zoomOutHandler()" [disabled]="pageSizeInPx <= minHeight">-</button>
+      <button (click)="saveAnnotations()">Save</button>
+    </div>
+  </div>
+    <div class="page">
+      <cdk-virtual-scroll-viewport itemSize="{{300}}" class="virtual-viewport">
+        <div *cdkVirtualFor="let page of pages; trackBy: trackByFn" class="viewport-item">
+          <app-page [imageUrl]="page.imageUrl" [ngStyle]="{'height.px': pageSizeInPx}" [pageNumber]="page.number" [documentId]="documentId"></app-page>
+        </div>
+      </cdk-virtual-scroll-viewport>
+    </div>
+</ng-template>
