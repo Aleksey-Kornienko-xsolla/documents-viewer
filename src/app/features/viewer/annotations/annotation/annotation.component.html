@@ -5,12 +5,12 @@
   <button (click)="setAnnotationType('image')">image</button>
 </div>
 
-<div *ngIf="type === 'text'; else image">
-  <div contenteditable="true" class="text-input"></div>
+<div *ngIf="type === 'text'; else image" class="value-container">
+  <textarea class="text-input" [formControl]="formControl" (blur)="updateTextValue()"></textarea>
 </div>
 
 <ng-template #image>
-  <div *ngIf="type === 'image'" class="image-container">
+  <div *ngIf="type === 'image'" class="value-container">
     <input type="file" (change)="onFileSelected($event)" accept="image/*" *ngIf="!imageSrc">
     <img *ngIf="imageSrc" [src]="imageSrc" alt="Selected Image" class="image" />
   </div>
